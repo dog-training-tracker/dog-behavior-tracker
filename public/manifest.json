@@ -2,19 +2,19 @@
   "name": "犬の行動記録",
   "short_name": "行動記録",
   "description": "散歩中の犬の行動を記録・分析するアプリ",
-  "start_url": "/",
+  "start_url": "/dog-behavior-tracker/",
   "display": "standalone",
   "background_color": "#f5f5f5",
   "theme_color": "#4a90d9",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/icons/icon-192.png",
+      "src": "/dog-behavior-tracker/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/icons/icon-512.png",
+      "src": "/dog-behavior-tracker/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
