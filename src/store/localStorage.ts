@@ -152,6 +152,26 @@ export function migrateData(): void {
       delete (dog as Record<string, unknown>).behaviorsByStimulus;
       changed = true;
     }
+    // environmentNote 未設定 → 空文字
+    if (dog.environmentNote === undefined) {
+      dog.environmentNote = '';
+      changed = true;
+    }
+    // recordMode 未設定 → デフォルト 'press'（長押し式）
+    if (!dog.recordMode) {
+      dog.recordMode = 'press';
+      changed = true;
+    }
   }
   if (changed) setItem(KEYS.dogs, dogs);
+
+  const sessions = getSessions();
+  let sessionChanged = false;
+  for (const s of sessions) {
+    if (s.environmentNote === undefined) {
+      s.environmentNote = '';
+      sessionChanged = true;
+    }
+  }
+  if (sessionChanged) setItem(KEYS.sessions, sessions);
 }

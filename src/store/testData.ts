@@ -63,6 +63,7 @@ export function generateTestData(walkCount = 14) {
       routePoints,
       treatAmount: pick([0, 10, 20, 30, 40, 50]),
       comment: pick(['', '今日は落ち着いていた', '犬が多かった', '雨上がりで人少なめ', '']),
+      environmentNote: '',
     };
     saveSession(session);
 

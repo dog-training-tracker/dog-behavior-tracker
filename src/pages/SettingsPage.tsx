@@ -154,6 +154,8 @@ export default function SettingsPage() {
       durationOptions: [...DEFAULT_DURATIONS],
       distanceOptions: [...DEFAULT_DISTANCES],
       goal: '反応を減らす',
+      environmentNote: '',
+      recordMode: 'press',
     };
     saveDog(newDog);
     setAllDogs(getDogs());
@@ -263,6 +265,63 @@ export default function SettingsPage() {
           <input className="input" value={name} onChange={e => setName(e.target.value)} onBlur={handleSaveProfile} />
           <label className="label">目標</label>
           <input className="input" value={goal} onChange={e => setGoal(e.target.value)} onBlur={handleSaveProfile} />
+        </div>
+      </div>
+
+      <div className="setting-group">
+        <div className="setting-title">環境（確立操作・環境事象）</div>
+        <div className="card">
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 0, marginBottom: 8 }}>
+            散歩前の状態・環境を自由に記録（散歩開始時にプリフィルされます）
+          </p>
+          <textarea
+            className="input"
+            placeholder="例) 朝食前 / 雨上がり / 来客あり / 通院後 など"
+            value={dog.environmentNote ?? ''}
+            onChange={e => updateDog(d => ({ ...d, environmentNote: e.target.value }))}
+            rows={3}
+            style={{ minHeight: 72 }}
+          />
+        </div>
+      </div>
+
+      <div className="setting-group">
+        <div className="setting-title">行動の記録方式</div>
+        <div className="card">
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 0, marginBottom: 8 }}>
+            散歩中、行動が起きた時のボタンの押し方
+          </p>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              className={`btn btn-full ${dog.recordMode === 'press' ? 'btn-primary' : ''}`}
+              style={{
+                flex: 1,
+                background: dog.recordMode === 'press' ? undefined : 'var(--bg)',
+                border: dog.recordMode === 'press' ? undefined : '2px solid var(--border)',
+                color: dog.recordMode === 'press' ? undefined : 'var(--text-secondary)',
+              }}
+              onClick={() => updateDog(d => ({ ...d, recordMode: 'press' }))}
+            >
+              長押し式
+            </button>
+            <button
+              className={`btn btn-full ${dog.recordMode === 'tap' ? 'btn-primary' : ''}`}
+              style={{
+                flex: 1,
+                background: dog.recordMode === 'tap' ? undefined : 'var(--bg)',
+                border: dog.recordMode === 'tap' ? undefined : '2px solid var(--border)',
+                color: dog.recordMode === 'tap' ? undefined : 'var(--text-secondary)',
+              }}
+              onClick={() => updateDog(d => ({ ...d, recordMode: 'tap' }))}
+            >
+              タップ式
+            </button>
+          </div>
+          <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 8, marginBottom: 0 }}>
+            {dog.recordMode === 'press'
+              ? '指で押した瞬間に開始、離した瞬間に終了'
+              : 'タップで開始、もう一度タップで終了'}
+          </p>
         </div>
       </div>
 

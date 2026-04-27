@@ -7,6 +7,8 @@ export interface Dog {
   durationOptions: number[];   // 行動の持続時間（秒）
   distanceOptions: number[];
   goal: string;
+  environmentNote: string;     // 環境（確立操作・環境事象）の定型メモ
+  recordMode: 'tap' | 'press'; // 行動記録の操作方式（タップ式/長押し式）
 }
 
 export interface Session {
@@ -17,6 +19,7 @@ export interface Session {
   routePoints: GeoPoint[];
   treatAmount: number;         // おやつ量（g）
   comment: string;
+  environmentNote: string;     // この散歩の環境メモ（dog.environmentNoteからプリフィル）
 }
 
 export interface BehaviorEvent {

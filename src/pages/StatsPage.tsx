@@ -93,15 +93,21 @@ export default function StatsPage() {
   const handleDataDownload = useCallback(() => {
     if (!dog) return;
     const events = getEventsByDog(dog.id);
+    const sessionsByDog = getSessionsByDog(dog.id);
+    const sessionMap = new Map(sessionsByDog.map(s => [s.id, s]));
 
-    const rows = events.map(e => ({
-      '日時': formatDateFull(e.timestamp),
-      '刺激': e.stimulus,
-      '行動': e.behavior ?? '',
-      '潜時(秒)': e.latency !== null ? (e.latency === -1 ? 'なし' : e.latency) : '',
-      '距離(m)': e.distance !== null ? e.distance : '',
-      'コメント': e.comment ?? '',
-    }));
+    const rows = events.map(e => {
+      const s = sessionMap.get(e.sessionId);
+      return {
+        '日時': formatDateFull(e.timestamp),
+        '刺激': e.stimulus,
+        '行動': e.behavior ?? '',
+        '潜時(秒)': e.latency !== null ? (e.latency === -1 ? 'なし' : e.latency) : '',
+        '距離(m)': e.distance !== null ? e.distance : '',
+        'コメント': e.comment ?? '',
+        '環境': s?.environmentNote ?? '',
+      };
+    });
 
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();

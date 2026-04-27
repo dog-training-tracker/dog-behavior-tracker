@@ -186,6 +186,7 @@ export default function WalkResultPage() {
 
   const [treatAmount, setTreatAmount] = useState(session?.treatAmount ?? 0);
   const [comment, setComment] = useState(session?.comment ?? '');
+  const [environmentNote, setEnvironmentNote] = useState(session?.environmentNote ?? '');
 
   const stats = useMemo(() => {
     const count = events.length;
@@ -201,7 +202,7 @@ export default function WalkResultPage() {
   }
 
   const handleSave = () => {
-    const updatedSession = { ...session, treatAmount, comment };
+    const updatedSession = { ...session, treatAmount, comment, environmentNote };
     saveSession(updatedSession);
 
     // バックグラウンドでサーバー同期
@@ -278,6 +279,16 @@ export default function WalkResultPage() {
           ))
         )}
       </div>
+
+      <label className="label">環境（確立操作・環境事象）</label>
+      <textarea
+        className="input"
+        placeholder="散歩前の状態・環境..."
+        value={environmentNote}
+        onChange={e => setEnvironmentNote(e.target.value)}
+        rows={2}
+        style={{ minHeight: 48 }}
+      />
 
       <label className="label">おやつ量</label>
       <select className="input" value={treatAmount} onChange={e => setTreatAmount(Number(e.target.value))}>

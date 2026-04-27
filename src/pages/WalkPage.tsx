@@ -94,7 +94,14 @@ export default function WalkPage() {
   // 終了タップ
   const handleEndRecord = useCallback(() => {
     if (!dog) return;
-    const duration = Math.floor((Date.now() - recordStartRef.current) / 1000);
+    const elapsedMs = Date.now() - recordStartRef.current;
+    // 長押し式で0.5秒未満は誤タップとして破棄
+    if (dog.recordMode === 'press' && elapsedMs < 500) {
+      setIsRecording(false);
+      setRecordDuration(0);
+      return;
+    }
+    const duration = Math.max(1, Math.floor(elapsedMs / 1000));
     const startPos = recordStartPosRef.current;
     const endPos = currentPosition;
     const distance = startPos && endPos ? Math.round(calcGpsDistance(startPos, endPos)) : null;
@@ -155,6 +162,7 @@ export default function WalkPage() {
       routePoints: getPoints(),
       treatAmount: 0,
       comment: '',
+      environmentNote: dog.environmentNote ?? '',
     };
     saveSession(session);
     navigate(`/walk-result/${sessionId}`);
@@ -163,6 +171,72 @@ export default function WalkPage() {
   if (!dog) {
     return <Navigate to="/login" replace />;
   }
+
+  const pendingEditor = pendingEvent && (
+    <div className="card" style={{ marginTop: 16 }}>
+      <div style={{
+        display: 'flex', justifyContent: 'space-between',
+        alignItems: 'center', marginBottom: 8,
+      }}>
+        <strong style={{ fontSize: 14 }}>直前の記録を編集</strong>
+        <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+          {pendingEvent.duration != null ? `${pendingEvent.duration}秒` : ''}
+          {pendingEvent.distance != null ? ` / ${pendingEvent.distance}m` : ''}
+        </span>
+      </div>
+
+      <div className="section-label" style={{ marginTop: 4 }}>SD（刺激）</div>
+      <ButtonGrid
+        options={dog.stimulusOptions}
+        selected={editStimulus}
+        onSelect={setEditStimulus}
+        columns={3}
+      />
+
+      <div className="section-label">行動</div>
+      <ButtonGrid
+        options={dog.targetBehaviors}
+        selected={editBehavior}
+        onSelect={setEditBehavior}
+        columns={3}
+      />
+
+      <div className="section-label">行動が出るまでの時間</div>
+      <ButtonGrid
+        options={dog.latencyOptions.filter(l => l > 0).map(l => `${l}秒`)}
+        selected={editLatency === null ? null : `${editLatency}秒`}
+        onSelect={v => setEditLatency(Number(v.replace('秒', '')))}
+        columns={4}
+      />
+
+      <div className="section-label">コメント</div>
+      <textarea
+        className="input"
+        placeholder="メモ..."
+        value={editComment}
+        onChange={e => setEditComment(e.target.value)}
+        rows={2}
+        style={{ minHeight: 48 }}
+      />
+
+      <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+        <button
+          className="btn btn-success"
+          style={{ flex: 1 }}
+          onClick={handleSaveEdit}
+        >
+          保存
+        </button>
+        <button
+          className="btn"
+          style={{ flex: 1, background: 'var(--bg)', border: '2px solid var(--border)', color: 'var(--text-secondary)' }}
+          onClick={handleSkipEdit}
+        >
+          スキップ
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="page" style={{ paddingBottom: 16 }}>
@@ -173,7 +247,57 @@ export default function WalkPage() {
       </div>
 
       {/* === 行動記録 === */}
-      {isRecording ? (
+      {dog.recordMode === 'press' ? (
+        /* 長押し式: 押している間=行動時間 */
+        <>
+          <button
+            className={isRecording ? 'btn btn-danger btn-full' : 'btn btn-primary btn-full'}
+            style={{
+              marginTop: 16,
+              minHeight: 140,
+              fontSize: 22,
+              borderRadius: 16,
+              letterSpacing: 1,
+              touchAction: 'manipulation',
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+              WebkitTouchCallout: 'none',
+            }}
+            onPointerDown={e => {
+              e.preventDefault();
+              (e.currentTarget as HTMLButtonElement).setPointerCapture?.(e.pointerId);
+              handleStartRecord();
+            }}
+            onPointerUp={() => { if (isRecording) handleEndRecord(); }}
+            onPointerCancel={() => { if (isRecording) handleEndRecord(); }}
+            onPointerLeave={() => { if (isRecording) handleEndRecord(); }}
+            onContextMenu={e => e.preventDefault()}
+          >
+            {isRecording ? (
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 12, opacity: 0.85, marginBottom: 4 }}>
+                  指を離すと終了
+                </div>
+                <div style={{
+                  fontSize: 48, fontWeight: 700,
+                  fontVariantNumeric: 'tabular-nums',
+                }}>
+                  {formatTimer(recordDuration)}
+                </div>
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 22, fontWeight: 700 }}>行動発生</div>
+                <div style={{ fontSize: 13, opacity: 0.85, marginTop: 4 }}>
+                  押している間が行動時間
+                </div>
+              </div>
+            )}
+          </button>
+          {!isRecording && pendingEditor}
+        </>
+      ) : isRecording ? (
+        /* タップ式: 計測中 */
         <div style={{ textAlign: 'center', marginTop: 20 }}>
           <div style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 8 }}>
             行動計測中...
@@ -223,73 +347,7 @@ export default function WalkPage() {
           >
             行動発生したらタップ
           </button>
-
-          {/* 直前の記録を編集 */}
-          {pendingEvent && (
-            <div className="card" style={{ marginTop: 16 }}>
-              <div style={{
-                display: 'flex', justifyContent: 'space-between',
-                alignItems: 'center', marginBottom: 8,
-              }}>
-                <strong style={{ fontSize: 14 }}>直前の記録を編集</strong>
-                <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                  {pendingEvent.duration != null ? `${pendingEvent.duration}秒` : ''}
-                  {pendingEvent.distance != null ? ` / ${pendingEvent.distance}m` : ''}
-                </span>
-              </div>
-
-              <div className="section-label" style={{ marginTop: 4 }}>SD（刺激）</div>
-              <ButtonGrid
-                options={dog.stimulusOptions}
-                selected={editStimulus}
-                onSelect={setEditStimulus}
-                columns={3}
-              />
-
-              <div className="section-label">行動</div>
-              <ButtonGrid
-                options={dog.targetBehaviors}
-                selected={editBehavior}
-                onSelect={setEditBehavior}
-                columns={3}
-              />
-
-              <div className="section-label">行動が出るまでの時間</div>
-              <ButtonGrid
-                options={dog.latencyOptions.filter(l => l > 0).map(l => `${l}秒`)}
-                selected={editLatency === null ? null : `${editLatency}秒`}
-                onSelect={v => setEditLatency(Number(v.replace('秒', '')))}
-                columns={4}
-              />
-
-              <div className="section-label">コメント</div>
-              <textarea
-                className="input"
-                placeholder="メモ..."
-                value={editComment}
-                onChange={e => setEditComment(e.target.value)}
-                rows={2}
-                style={{ minHeight: 48 }}
-              />
-
-              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                <button
-                  className="btn btn-success"
-                  style={{ flex: 1 }}
-                  onClick={handleSaveEdit}
-                >
-                  保存
-                </button>
-                <button
-                  className="btn"
-                  style={{ flex: 1, background: 'var(--bg)', border: '2px solid var(--border)', color: 'var(--text-secondary)' }}
-                  onClick={handleSkipEdit}
-                >
-                  スキップ
-                </button>
-              </div>
-            </div>
-          )}
+          {pendingEditor}
         </>
       )}
 

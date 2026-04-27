@@ -146,21 +146,27 @@ export default function InstructorPage() {
     return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
   };
 
-  const eventsToRows = (events: BehaviorEvent[]) =>
-    events.map(e => ({
-      '日時': formatDateFull(e.timestamp),
-      '刺激': e.stimulus,
-      '行動': e.behavior ?? '',
-      '潜時(秒)': e.latency !== null ? (e.latency === -1 ? 'なし' : e.latency) : '',
-      '距離(m)': e.distance !== null ? e.distance : '',
-      'コメント': e.comment ?? '',
-    }));
+  const eventsToRows = (events: BehaviorEvent[], sessions: typeof studentSessions) => {
+    const sessionMap = new Map(sessions.map(s => [s.id, s]));
+    return events.map(e => {
+      const s = sessionMap.get(e.sessionId);
+      return {
+        '日時': formatDateFull(e.timestamp),
+        '刺激': e.stimulus,
+        '行動': e.behavior ?? '',
+        '潜時(秒)': e.latency !== null ? (e.latency === -1 ? 'なし' : e.latency) : '',
+        '距離(m)': e.distance !== null ? e.distance : '',
+        'コメント': e.comment ?? '',
+        '環境': s?.environmentNote ?? '',
+      };
+    });
+  };
 
   const handleExport = () => {
     if (!selectedStudent || studentEvents.length === 0) return;
     setExporting(true);
     try {
-      const ws = XLSX.utils.json_to_sheet(eventsToRows(studentEvents));
+      const ws = XLSX.utils.json_to_sheet(eventsToRows(studentEvents, studentSessions));
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, '行動記録');
       XLSX.writeFile(wb, `${selectedStudent.dogName}_行動記録.xlsx`);
@@ -199,7 +205,7 @@ export default function InstructorPage() {
 
         // 生徒別シート
         if (events.length > 0) {
-          const ws = XLSX.utils.json_to_sheet(eventsToRows(events));
+          const ws = XLSX.utils.json_to_sheet(eventsToRows(events, sessions));
           XLSX.utils.book_append_sheet(wb, ws, s.dogName.slice(0, 31));
         }
       }

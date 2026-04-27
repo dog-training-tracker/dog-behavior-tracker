@@ -74,6 +74,8 @@ export default function LoginPage() {
       durationOptions: [...DEFAULT_DURATIONS],
       distanceOptions: [...DEFAULT_DISTANCES],
       goal: goal.trim() || '反応を減らす',
+      environmentNote: '',
+      recordMode: 'press',
     };
     saveDog(dog);
     setActiveDogId(dog.id);
